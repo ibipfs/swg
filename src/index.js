@@ -54,11 +54,13 @@ const fetchStats = () => {
 // Fetch request
 self.addEventListener('fetch', (event) => {
   const path = event.request.url
+
+  const isIpnsRequest = path.startsWith(`${self.location.origin}/ipns/`)
   const isIpfsRequest = path.startsWith(`${self.location.origin}/ipfs/`)
   const isStatsRequest = path.startsWith(`${self.location.origin}/stats`)
 
   // Not intercepting path
-  if (!(isIpfsRequest || isStatsRequest)) {
+  if (!(isIpnsRequest || isIpfsRequest || isStatsRequest)) {
     return
   }
 
@@ -67,10 +69,17 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(fetchStats())
   } else {
     // Gateway page
-    const match = path.match(/(\/ipfs\/.*?)(#|\?|$)/)
-    const ipfsPath = match[1]
+    if(isIpfsRequest) {
+      const match = path.match(/(\/ipfs\/.*?)(#|\?|$)/)
+      const ipfsPath = match[1]
 
-    event.respondWith(fetchCID(ipfsPath))
+      event.respondWith(fetchCID(ipfsPath))
+    } else if(isIpnsRequest) {
+      const match = path.match(/(\/ipns\/.*?)(#|\?|$)/)
+      const ipnsPath = match[1]
+
+      event.respondWith(Response.redirect('https://gateway.pinata.cloud' + ipnsPath));
+    }
   }
 })
 
