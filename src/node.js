@@ -2,48 +2,48 @@
 
 const IPFS = require('ipfs')
 
-const defaults = {
-      init: true,
-      start: true,
-      EXPERIMENTAL: {},
-      preload: {
-        enabled: false,
-        addresses: [
-          '/dnsaddr/node0.preload.ipfs.io/https',
-          '/dnsaddr/node1.preload.ipfs.io/https'
-        ]
-      }
-}
-
 let node
 
 /* start a IPFS node within the service worker */
-const startNode = (configs) => {
+const startNode = (options) => {
   return new Promise((resolve) => {
     //node = new IPFS()
-    node = new IPFS(configs || defaults)
+    node = new IPFS(options)
     node.on('error', (error) => {
       console.log(error.toString())
     })
 
     node.on('ready', () => {
+      //console.log('ipfs node config: ' + JSON.stringify(node._options))
       resolve(node)
     })
   })
 }
 
 /* get a ready to use IPFS node */
-const getNode = (configs) => {
+const getNode = (options) => {
   return new Promise((resolve) => {
     if (!node) {
-      return startNode(configs || defaults).then((node) => resolve(node))
+      return startNode(options).then((node) => resolve(node))
     }
 
     resolve(node)
   })
 }
 
+/* get the ready to use libp2p node */
+const getLibp2pNode = (options) => {
+  getNode(options)
+  .then((node) => {
+    Promise.all([node.libp2p])
+      .then(([lp2pNode]) => {
+        return lp2pNode
+      })
+  })
+}
+
 module.exports = {
   get: getNode,
-  start: startNode
+  start: startNode,
+  getLibp2p: getLibp2pNode
 }
