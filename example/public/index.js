@@ -51,9 +51,9 @@ document.querySelector('#serviceWorkerStop').addEventListener('click', () => {
 })
 
 /* Service worker related */
-const register = () => {
+const register = (config) => {
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register(swName)
+    navigator.serviceWorker.register(swName, config)
       .then((registration) => {
         node = createProxyClient({
           addListener: navigator.serviceWorker.addEventListener.bind(navigator.serviceWorker),

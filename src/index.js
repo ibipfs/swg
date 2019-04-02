@@ -17,19 +17,18 @@ const getFormattedDate = (d) => `${d.getFullYear()}/${d.getMonth()}/${d.getDate(
 const getFormattedTime = (d) => `${d.getHours()}:${d.getMinutes()}:${d.getSeconds()}`
 
 let ipfsNode
-let libp2pNode
 
-const options = {
+/*const options = {
         init: true,
         start: true,
         EXPERIMENTAL: {},
         preload: {
           enabled: false,
           addresses: [
-            '/dnsaddr/service.edening.net/https'/*,
+            '/dnsaddr/service.edening.net/https',
             `/dnsaddr/${self.location.hostname}/https`,
             '/dnsaddr/node0.preload.ipfs.io/https',
-            '/dnsaddr/node1.preload.ipfs.io/https'*/
+            '/dnsaddr/node1.preload.ipfs.io/https'
           ]
         },
         config: {
@@ -46,32 +45,35 @@ const options = {
             '/dns4/node1.preload.ipfs.io/tcp/443/wss/ipfs/Qmbut9Ywz9YEDrz8ySBSgWyJk41Uvm2QJPhwDJzJyGFsD6'
           ]
         }
+    }*/
+const options = {
+        init: true,
+        start: true,
+        EXPERIMENTAL: {
+          pubsub: true
+        },
+        preload: {
+          enabled: true,
+          addresses: [
+            '/dnsaddr/go-ipfs.localhost/http',
+            //'/dnsaddr/js-ipfs.localhost/http', // `{host}/api/v0/refs?r=true&arg={hash}` not found
+            '/dnsaddr/inode-go.edening.net/https'
+          ]
+        },
+        config: {
+          dnsHost: `http://${self.location.origin}`,
+          Bootstrap: [
+            '/dns4/localhost/tcp/4003/ws/ipfs/QmfXCM93Cc5mEY1th2btwKVXR1iN84Ci8NQZ69XGjxEbu2', // jsipfs@localhost
+            '/dns4/localhost/tcp/8081/ws/ipfs/QmRp3fDveHrt9iaHxs8VcgdF59CfLpnVcn5ERoTph88Wro', // goipfs@localhost
+            '/dns4/service.edening.net/tcp/443/wss/ipfs/QmdC5xvY5SKnCzz4b4wLhwDLzRW3tbpyMjxqM3gay9WTVF' // goipfs@edening.net
+          ]
+        }
     }
-
-const resolve = (key) => {
-  const magics = {
-    "pov": "/ipfs/QmNj1Euitte9rF8PQ7We5cyMtFjiJ1mgpLRXePLV6z112m",
-    "default": "/ipfs/QmVxnCSxhRZvG5XpLvbhP69gVRHzLjQLRXvipvEdXoEesf"
-  }
-
-  let path = magics.default
-
-  if(magics[key]) {
-    path = magics[key]
-  }
-
-  return path
-}   
-
-// Fetch Magic | TODO: Using pubsub?
-const fetchMagic = (key) => {
-  return fetchCID(resolve(key))
-}
 
 // Fetch IPNS | TODO: Checking for availabe GW before redirecting?
 const fetchIPNS = (ipnsPath) => {
   //let gw = `${self.location.origin}`
-  let gw = 'https://gateway.pinata.cloud';
+  let gw = 'https://gateway.pinata.cloud'
   return Response.redirect(gw + ipnsPath)
 }
 
@@ -116,19 +118,9 @@ const fetchStats = () => {
 self.addEventListener('fetch', (event) => {
   const path = event.request.url
 
-  const isMagic = path.startsWith(`${self.location.origin}/magic/`)
-
   const isIpnsRequest = path.startsWith(`${self.location.origin}/ipns/`)
   const isIpfsRequest = path.startsWith(`${self.location.origin}/ipfs/`)
   const isStatsRequest = path.startsWith(`${self.location.origin}/stats`)
-
-  if(isMagic) {
-    const match = path.match(/(\/magic\/.*?)(#|\?|$)/)
-    const magicPath = match[1]
-    const magicKey = magicPath.split('/magic/')[1]
-
-    event.respondWith(fetchMagic(magicKey))
-  }
 
   // Not intercepting path
   if (!(isIpnsRequest || isIpfsRequest || isStatsRequest)) {
@@ -174,9 +166,6 @@ self.addEventListener('activate', (event) => {
         date: getFormattedDate(d),
         time: getFormattedTime(d)
       })
-
-      //Magic
-      libp2pNode = node.getLibp2p()
     })
     .catch((err) => console.log(err))
   event.waitUntil(self.clients.claim())
