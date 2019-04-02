@@ -18,34 +18,6 @@ const getFormattedTime = (d) => `${d.getHours()}:${d.getMinutes()}:${d.getSecond
 
 let ipfsNode
 
-/*const options = {
-        init: true,
-        start: true,
-        EXPERIMENTAL: {},
-        preload: {
-          enabled: false,
-          addresses: [
-            '/dnsaddr/service.edening.net/https',
-            `/dnsaddr/${self.location.hostname}/https`,
-            '/dnsaddr/node0.preload.ipfs.io/https',
-            '/dnsaddr/node1.preload.ipfs.io/https'
-          ]
-        },
-        config: {
-          dnsHost: `https://${self.location.hostname}`,
-          Bootstrap: [
-            '/dns4/ams-1.bootstrap.libp2p.io/tcp/443/wss/ipfs/QmSoLer265NRgSp2LA3dPaeykiS1J6DifTC88f5uVQKNAd',
-            '/dns4/lon-1.bootstrap.libp2p.io/tcp/443/wss/ipfs/QmSoLMeWqB7YGVLJN3pNLQpmmEk35v6wYtsMGLzSr5QBU3',
-            '/dns4/service.edening.net/tcp/443/wss/ipfs/QmdC5xvY5SKnCzz4b4wLhwDLzRW3tbpyMjxqM3gay9WTVF',
-            '/dns4/sfo-3.bootstrap.libp2p.io/tcp/443/wss/ipfs/QmSoLPppuBtQSGwKDZT2M73ULpjvfd3aZ6ha4oFGL1KrGM',
-            '/dns4/sgp-1.bootstrap.libp2p.io/tcp/443/wss/ipfs/QmSoLSafTMBsPKadTEgaXctDQVcqN88CNLHXMkTNwMKPnu',
-            '/dns4/nyc-1.bootstrap.libp2p.io/tcp/443/wss/ipfs/QmSoLueR4xBeUbY9WZ9xGUUxunbKWcrNFTDAadQJmocnWm',
-            '/dns4/nyc-2.bootstrap.libp2p.io/tcp/443/wss/ipfs/QmSoLV4Bbm51jM9C4gDYZQ9Cy3U6aXMJDAbzgu2fzaDs64',
-            '/dns4/node0.preload.ipfs.io/tcp/443/wss/ipfs/QmZMxNdpMkewiVZLMRxaNxUeZpDUb34pWjZ1kZvsd16Zic',
-            '/dns4/node1.preload.ipfs.io/tcp/443/wss/ipfs/Qmbut9Ywz9YEDrz8ySBSgWyJk41Uvm2QJPhwDJzJyGFsD6'
-          ]
-        }
-    }*/
 const options = {
         init: true,
         start: true,
@@ -55,17 +27,28 @@ const options = {
         preload: {
           enabled: true,
           addresses: [
-            '/dnsaddr/go-ipfs.localhost/http',
-            //'/dnsaddr/js-ipfs.localhost/http', // `{host}/api/v0/refs?r=true&arg={hash}` not found
-            '/dnsaddr/inode-go.edening.net/https'
+            /// custom
+            //'/dnsaddr/<PreloadNodeHost>/https'
+            /// official
+            '/dnsaddr/node0.preload.ipfs.io/https',
+            '/dnsaddr/node1.preload.ipfs.io/https'
           ]
         },
         config: {
-          dnsHost: `http://${self.location.origin}`,
+          //dnsHost: `http://${self.location.origin}`,
           Bootstrap: [
-            '/dns4/localhost/tcp/4003/ws/ipfs/QmfXCM93Cc5mEY1th2btwKVXR1iN84Ci8NQZ69XGjxEbu2', // jsipfs@localhost
-            '/dns4/localhost/tcp/8081/ws/ipfs/QmRp3fDveHrt9iaHxs8VcgdF59CfLpnVcn5ERoTph88Wro', // goipfs@localhost
-            '/dns4/service.edening.net/tcp/443/wss/ipfs/QmdC5xvY5SKnCzz4b4wLhwDLzRW3tbpyMjxqM3gay9WTVF' // goipfs@edening.net
+            /// custom
+            //'/dns4/localhost/tcp/<port>/(ws|wss)/ipfs/<PeerId>', // Local IPFS Peer
+            //'/dns4/<RemoteHost>/tcp/443/wss/ipfs/<PeerId>' // Remote IPFS Peer
+            /// official
+            '/dns4/ams-1.bootstrap.libp2p.io/tcp/443/wss/ipfs/QmSoLer265NRgSp2LA3dPaeykiS1J6DifTC88f5uVQKNAd',
+            '/dns4/lon-1.bootstrap.libp2p.io/tcp/443/wss/ipfs/QmSoLMeWqB7YGVLJN3pNLQpmmEk35v6wYtsMGLzSr5QBU3',
+            '/dns4/sfo-3.bootstrap.libp2p.io/tcp/443/wss/ipfs/QmSoLPppuBtQSGwKDZT2M73ULpjvfd3aZ6ha4oFGL1KrGM',
+            '/dns4/sgp-1.bootstrap.libp2p.io/tcp/443/wss/ipfs/QmSoLSafTMBsPKadTEgaXctDQVcqN88CNLHXMkTNwMKPnu',
+            '/dns4/nyc-1.bootstrap.libp2p.io/tcp/443/wss/ipfs/QmSoLueR4xBeUbY9WZ9xGUUxunbKWcrNFTDAadQJmocnWm',
+            '/dns4/nyc-2.bootstrap.libp2p.io/tcp/443/wss/ipfs/QmSoLV4Bbm51jM9C4gDYZQ9Cy3U6aXMJDAbzgu2fzaDs64',
+            '/dns4/node0.preload.ipfs.io/tcp/443/wss/ipfs/QmZMxNdpMkewiVZLMRxaNxUeZpDUb34pWjZ1kZvsd16Zic',
+            '/dns4/node1.preload.ipfs.io/tcp/443/wss/ipfs/Qmbut9Ywz9YEDrz8ySBSgWyJk41Uvm2QJPhwDJzJyGFsD6'
           ]
         }
     }
