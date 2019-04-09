@@ -16,6 +16,8 @@ const statsView = require('./stats-view')
 const getFormattedDate = (d) => `${d.getFullYear()}/${d.getMonth()}/${d.getDate()}`
 const getFormattedTime = (d) => `${d.getHours()}:${d.getMinutes()}:${d.getSeconds()}`
 
+const hostname = `${self.location.hostname}`
+
 let ipfsNode
 
 const options = {
@@ -29,6 +31,8 @@ const options = {
           addresses: [
             /// custom
             //'/dnsaddr/<PreloadNodeHost>/https'
+            `/dnsaddr/${hostname}/https`,
+            '/dnsaddr/gateway.pinata.cloud/https',
             //'/dnsaddr/js-ipfs.localhost/http', // `{host}/api/v0/refs?r=true&arg={hash}` not found
             /// official
             '/dnsaddr/node0.preload.ipfs.io/https',
@@ -36,7 +40,7 @@ const options = {
           ]
         },
         config: {
-          //dnsHost: `http://${self.location.origin}`,
+          dnsHost: `https://${hostname}`,
           Bootstrap: [
             /// custom
             //'/dns4/localhost/tcp/<port>/(ws|wss)/ipfs/<PeerId>', // Local IPFS Peer
@@ -44,6 +48,7 @@ const options = {
             /// official
             '/dns4/ams-1.bootstrap.libp2p.io/tcp/443/wss/ipfs/QmSoLer265NRgSp2LA3dPaeykiS1J6DifTC88f5uVQKNAd',
             '/dns4/lon-1.bootstrap.libp2p.io/tcp/443/wss/ipfs/QmSoLMeWqB7YGVLJN3pNLQpmmEk35v6wYtsMGLzSr5QBU3',
+            `/dns4/service.edening.net/tcp/443/wss/ipfs/QmdC5xvY5SKnCzz4b4wLhwDLzRW3tbpyMjxqM3gay9WTVF`,
             '/dns4/sfo-3.bootstrap.libp2p.io/tcp/443/wss/ipfs/QmSoLPppuBtQSGwKDZT2M73ULpjvfd3aZ6ha4oFGL1KrGM',
             '/dns4/sgp-1.bootstrap.libp2p.io/tcp/443/wss/ipfs/QmSoLSafTMBsPKadTEgaXctDQVcqN88CNLHXMkTNwMKPnu',
             '/dns4/nyc-1.bootstrap.libp2p.io/tcp/443/wss/ipfs/QmSoLueR4xBeUbY9WZ9xGUUxunbKWcrNFTDAadQJmocnWm',
@@ -101,12 +106,9 @@ const fetchStats = () => {
 // Fetch request
 self.addEventListener('fetch', (event) => {
   const path = event.request.url
-  //console.log('path: ' + path)
-  const swPath = '/ipns/QmQebw1nSLGzrmV9jUKzhCqpFPgdioYBmepLu8kFZs53vn'
+  const isLocal = path.startsWith('http://localhost')
+  const swPath =  isLocal? '' : '/ipns/QmQebw1nSLGzrmV9jUKzhCqpFPgdioYBmepLu8kFZs53vn'
 
-  /*const isIpnsRequest = path.startsWith(`${self.location.origin}/ipns/`)
-  const isIpfsRequest = path.startsWith(`${self.location.origin}/ipfs/`)
-  const isStatsRequest = path.startsWith(`${self.location.origin}/stats`)*/
   const isIpnsRequest = path.startsWith(`${self.location.origin}${swPath}/ipns/`)
   const isIpfsRequest = path.startsWith(`${self.location.origin}${swPath}/ipfs/`)
   const isStatsRequest = path.startsWith(`${self.location.origin}${swPath}/stats`)
@@ -120,25 +122,21 @@ self.addEventListener('fetch', (event) => {
   if (isStatsRequest) {
     event.respondWith(fetchStats())
   } else {
-    // Gateway page
+    // Magic page
+    let matchedPath
+
     if(isIpfsRequest) {
-      //const match = path.match(/(\/ipfs\/.*?)(#|\?|$)/)
-      const match = path.match(/(\/ipns\/QmQebw1nSLGzrmV9jUKzhCqpFPgdioYBmepLu8kFZs53vn\/ipfs\/.*?)(#|\?|$)/)
-      //const ipfsPath = match[1]
-      let ipfsPath = match[1]
-      ipfsPath = ipfsPath.substring(ipfsPath.lastIndexOf('ipfs') - 1)
-      //console.log('ipfsPath: ' + ipfsPath)
+      const match = isLocal? path.match(/(\/ipfs\/.*?)(#|\?|$)/) : path.match(/(\/ipns\/QmQebw1nSLGzrmV9jUKzhCqpFPgdioYBmepLu8kFZs53vn\/ipfs\/.*?)(#|\?|$)/)
+      matchedPath = match[1]
+      matchedPath = matchedPath.substring(matchedPath.lastIndexOf('ipfs') - 1)
 
-      event.respondWith(fetchCID(ipfsPath))
+      event.respondWith(fetchCID(matchedPath))
     } else if(isIpnsRequest) {
-      //const match = path.match(/(\/ipns\/.*?)(#|\?|$)/)
-      const match = path.match(/(\/ipns\/QmQebw1nSLGzrmV9jUKzhCqpFPgdioYBmepLu8kFZs53vn\/ipns\/.*?)(#|\?|$)/)
-      //const ipnsPath = match[1]
-      let ipnsPath = match[1]
-      ipnsPath = ipnsPath.substring(ipnsPath.lastIndexOf('ipns') - 1)
-      //console.log('ipnsPath: ' + ipnsPath)
+      const match = isLocal? path.match(/(\/ipns\/.*?)(#|\?|$)/) : path.match(/(\/ipns\/QmQebw1nSLGzrmV9jUKzhCqpFPgdioYBmepLu8kFZs53vn\/ipns\/.*?)(#|\?|$)/)
+      matchedPath = match[1]
+      matchedPath = matchedPath.substring(matchedPath.lastIndexOf('ipns') - 1)
 
-      event.respondWith(fetchIPNS(ipnsPath));
+      event.respondWith(fetchIPNS(matchedPath));
     }
   }
 })
