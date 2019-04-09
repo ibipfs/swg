@@ -29,6 +29,7 @@ const options = {
           addresses: [
             /// custom
             //'/dnsaddr/<PreloadNodeHost>/https'
+            //'/dnsaddr/js-ipfs.localhost/http', // `{host}/api/v0/refs?r=true&arg={hash}` not found
             /// official
             '/dnsaddr/node0.preload.ipfs.io/https',
             '/dnsaddr/node1.preload.ipfs.io/https'
@@ -100,10 +101,15 @@ const fetchStats = () => {
 // Fetch request
 self.addEventListener('fetch', (event) => {
   const path = event.request.url
+  //console.log('path: ' + path)
+  const swPath = '/ipns/QmQebw1nSLGzrmV9jUKzhCqpFPgdioYBmepLu8kFZs53vn'
 
-  const isIpnsRequest = path.startsWith(`${self.location.origin}/ipns/`)
+  /*const isIpnsRequest = path.startsWith(`${self.location.origin}/ipns/`)
   const isIpfsRequest = path.startsWith(`${self.location.origin}/ipfs/`)
-  const isStatsRequest = path.startsWith(`${self.location.origin}/stats`)
+  const isStatsRequest = path.startsWith(`${self.location.origin}/stats`)*/
+  const isIpnsRequest = path.startsWith(`${self.location.origin}${swPath}/ipns/`)
+  const isIpfsRequest = path.startsWith(`${self.location.origin}${swPath}/ipfs/`)
+  const isStatsRequest = path.startsWith(`${self.location.origin}${swPath}/stats`)
 
   // Not intercepting path
   if (!(isIpnsRequest || isIpfsRequest || isStatsRequest)) {
@@ -116,13 +122,21 @@ self.addEventListener('fetch', (event) => {
   } else {
     // Gateway page
     if(isIpfsRequest) {
-      const match = path.match(/(\/ipfs\/.*?)(#|\?|$)/)
-      const ipfsPath = match[1]
+      //const match = path.match(/(\/ipfs\/.*?)(#|\?|$)/)
+      const match = path.match(/(\/ipns\/QmQebw1nSLGzrmV9jUKzhCqpFPgdioYBmepLu8kFZs53vn\/ipfs\/.*?)(#|\?|$)/)
+      //const ipfsPath = match[1]
+      let ipfsPath = match[1]
+      ipfsPath = ipfsPath.substring(ipfsPath.lastIndexOf('ipfs') - 1)
+      //console.log('ipfsPath: ' + ipfsPath)
 
       event.respondWith(fetchCID(ipfsPath))
     } else if(isIpnsRequest) {
-      const match = path.match(/(\/ipns\/.*?)(#|\?|$)/)
-      const ipnsPath = match[1]
+      //const match = path.match(/(\/ipns\/.*?)(#|\?|$)/)
+      const match = path.match(/(\/ipns\/QmQebw1nSLGzrmV9jUKzhCqpFPgdioYBmepLu8kFZs53vn\/ipns\/.*?)(#|\?|$)/)
+      //const ipnsPath = match[1]
+      let ipnsPath = match[1]
+      ipnsPath = ipnsPath.substring(ipnsPath.lastIndexOf('ipns') - 1)
+      //console.log('ipnsPath: ' + ipnsPath)
 
       event.respondWith(fetchIPNS(ipnsPath));
     }
