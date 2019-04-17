@@ -18,6 +18,8 @@ const getFormattedTime = (d) => `${d.getHours()}:${d.getMinutes()}:${d.getSecond
 
 const hostname = `${self.location.hostname}`
 
+let iRecordAt
+
 let ipfsNode
 
 const options = {
@@ -109,12 +111,13 @@ self.addEventListener('fetch', (event) => {
   const isLocal = path.startsWith('http://localhost')
   const swPath =  isLocal? '' : '/ipns/QmQebw1nSLGzrmV9jUKzhCqpFPgdioYBmepLu8kFZs53vn'
 
+  const isIRecordRequest = path.startsWith(`${self.location.origin}${swPath}/irecord/`)
   const isIpnsRequest = path.startsWith(`${self.location.origin}${swPath}/ipns/`)
   const isIpfsRequest = path.startsWith(`${self.location.origin}${swPath}/ipfs/`)
   const isStatsRequest = path.startsWith(`${self.location.origin}${swPath}/stats`)
 
   // Not intercepting path
-  if (!(isIpnsRequest || isIpfsRequest || isStatsRequest)) {
+  if (!(isIRecordRequest || isIpnsRequest || isIpfsRequest || isStatsRequest)) {
     return
   }
 
@@ -136,7 +139,9 @@ self.addEventListener('fetch', (event) => {
       matchedPath = match[1]
       matchedPath = matchedPath.substring(matchedPath.lastIndexOf('ipns') - 1)
 
-      event.respondWith(fetchIPNS(matchedPath));
+      event.respondWith(fetchIPNS(matchedPath))
+    } else if(isIRecordRequest) {
+      event.respondWith(fetchCID(iRecordAt))
     }
   }
 })
@@ -150,6 +155,8 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   node.get(options)
     .then((ipfs) => {
+
+      iRecordAt = '/ipfs/QmZdLWmy9WcLdYKV3PpuP4DkG2Pt222cVftPLas2xHseqW'
 
       ipfsNode = ipfs
 
