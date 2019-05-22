@@ -1,10 +1,8 @@
 /* global self, Response */
 
-/* TODOS
-1. Checking for availabe GW and setting as default?
- */
-
 'use strict'
+
+const { getFastest } = require('../../public-gateway-checker')
 
 const { createProxyServer } = require('ipfs-postmsg-proxy')
 const { getResponse } = require('ipfs-http-response')
@@ -17,6 +15,10 @@ const getFormattedDate = (d) => `${d.getFullYear()}/${d.getMonth()}/${d.getDate(
 const getFormattedTime = (d) => `${d.getHours()}:${d.getMinutes()}:${d.getSeconds()}`
 
 const hostname = `${self.location.hostname}`
+
+let swPath // Dynamically be assigned during installation
+
+let gw = 'https://ipfs.io'
 
 let iRecordAt
 
@@ -61,11 +63,24 @@ const options = {
         }
     }
 
-// Fetch IPNS | TODO: Checking for availabe GW before redirecting?
 const fetchIPNS = (ipnsPath) => {
-  //let gw = `${self.location.origin}`
-  let gw = 'https://gateway.pinata.cloud'
-  return Response.redirect(gw + ipnsPath)
+  return getFastest()
+  .then((result) => {
+    console.log('getFastest() result: ' + result)
+
+    gw = result
+
+    return Response.redirect(gw + ipnsPath)
+  }, (reason) => {
+    console.log('getFastest() failed: ' + reason)
+
+    return new Response('getFastest() failed: ' + reason)
+  })
+  .catch((err) => {
+    console.log('getFastest() error: ' + err)
+
+    return new Response('getFastest() error: ' + err)
+  })
 }
 
 // Fetch CID
@@ -108,8 +123,6 @@ const fetchStats = () => {
 // Fetch request
 self.addEventListener('fetch', (event) => {
   const path = event.request.url
-  const isLocal = path.startsWith('http://localhost')
-  const swPath =  isLocal? '' : '/ipns/QmQebw1nSLGzrmV9jUKzhCqpFPgdioYBmepLu8kFZs53vn'
 
   const isIRecordRequest = path.startsWith(`${self.location.origin}${swPath}/irecord/`)
   const isIpnsRequest = path.startsWith(`${self.location.origin}${swPath}/ipns/`)
@@ -129,13 +142,15 @@ self.addEventListener('fetch', (event) => {
     let matchedPath
 
     if(isIpfsRequest) {
-      const match = isLocal? path.match(/(\/ipfs\/.*?)(#|\?|$)/) : path.match(/(\/ipns\/QmQebw1nSLGzrmV9jUKzhCqpFPgdioYBmepLu8kFZs53vn\/ipfs\/.*?)(#|\?|$)/)
+      const match = path.match(/(\/ipfs\/.*?)(#|\?|$)/)
+      //const match = isLocal? path.match(/(\/ipfs\/.*?)(#|\?|$)/) : path.match(/(\/ipns\/QmQebw1nSLGzrmV9jUKzhCqpFPgdioYBmepLu8kFZs53vn\/ipfs\/.*?)(#|\?|$)/)
       matchedPath = match[1]
       matchedPath = matchedPath.substring(matchedPath.lastIndexOf('ipfs') - 1)
 
       event.respondWith(fetchCID(matchedPath))
     } else if(isIpnsRequest) {
-      const match = isLocal? path.match(/(\/ipns\/.*?)(#|\?|$)/) : path.match(/(\/ipns\/QmQebw1nSLGzrmV9jUKzhCqpFPgdioYBmepLu8kFZs53vn\/ipns\/.*?)(#|\?|$)/)
+      const match = path.match(/(\/ipns\/.*?)(#|\?|$)/)
+      //const match = isLocal? path.match(/(\/ipns\/.*?)(#|\?|$)/) : path.match(/(\/ipns\/QmQebw1nSLGzrmV9jUKzhCqpFPgdioYBmepLu8kFZs53vn\/ipns\/.*?)(#|\?|$)/)
       matchedPath = match[1]
       matchedPath = matchedPath.substring(matchedPath.lastIndexOf('ipns') - 1)
 
@@ -148,11 +163,36 @@ self.addEventListener('fetch', (event) => {
 
 // Install service worker
 self.addEventListener('install', (event) => {
+  console.log('Installing service worker ...')
+
+  const pathname = self.location.pathname
+
+  console.log('pathname: ' + pathname)
+
+  swPath = pathname.substring(0, pathname.lastIndexOf('/'))
+
+  console.log('swPath: ' + swPath)
+
   event.waitUntil(self.skipWaiting())
 })
 
 // Activate service worker
 self.addEventListener('activate', (event) => {
+  console.log('Activating service worker ...')
+
+  /*getFastest()
+  .then((result) => {
+    console.log('getFastest() result: ' + result)
+
+    gw = result
+  }, (reason) => {
+    console.log('getFastest() failed: ' + reason)
+  })
+  .catch(err => console.log('getFastest() error: ' + err))
+  .finally(() => {
+    console.log('After getFastest() gw: ' + gw)
+  })*/
+
   node.get(options)
     .then((ipfs) => {
 
